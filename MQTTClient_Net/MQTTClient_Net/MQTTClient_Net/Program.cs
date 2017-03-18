@@ -7,44 +7,53 @@ using System.Threading.Tasks;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 
-namespace MQTTClient
+namespace MQTTClient_Net
 {
     class Program
     {
+        static MqttClient client;
+        static string MQTT_BROKER_ADDRESS = "192.168.86.233";// BROKER IP ADDRESS
+
         static void Main(string[] args)
         {
             Console.WriteLine("--------START PROGRAM--------");
-            String MQTT_BROKER_ADDRESS = "192.168.86.233";
 
-            MqttClient client = new MqttClient(MQTT_BROKER_ADDRESS);
-            client.ProtocolVersion = MqttProtocolVersion.Version_3_1;
-
-            //byte code = client.Connect(Guid.NewGuid().ToString(), null, null,
-            //               false, // will retain flag
-            //               MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, // will QoS
-            //               true, // will flag
-            //               "autotrace", // will topic
-            //               "will_message", // will message
-            //               true,
-            //               60);
-
-            byte code = client.Connect(Guid.NewGuid().ToString());
+            connect();
 
             client.MqttMsgPublished += Client_MqttMsgPublished;
             client.MqttMsgSubscribed += Client_MqttMsgSubscribed;
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
             client.MqttMsgUnsubscribed += Client_MqttMsgUnsubscribed;
 
-            //ushort msgId = client.Publish("autotrace", // topic
-            //Encoding.UTF8.GetBytes("MyMessageBody"), // message body
-            //                  MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, // QoS level
-            //                  false); // retained
+            string topic = "my_topic";
+            Subscribe(topic);
 
-            ushort msgId1 = client.Subscribe(new string[] { "autotrace", "/topic_2" },
-                                 new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE,
-                                 MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE });
+        }
 
-            //ushort msgId2 = client.Unsubscribe(new string[] { "/autotrace", "/topic_2" });
+        private static void connect()
+        {
+            client = new MqttClient(MQTT_BROKER_ADDRESS);
+            client.ProtocolVersion = MqttProtocolVersion.Version_3_1;
+            client.Connect(Guid.NewGuid().ToString());
+        }
+
+        private static void Publish(string topic, string message)
+        {
+            client.Publish(topic, // topic
+            Encoding.UTF8.GetBytes(message), // message body
+                              MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, // QoS level
+                              false); // retained
+        }
+
+        private static void Subscribe(string topic)
+        {
+           client.Subscribe(new string[] { topic },
+                                new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
+        }
+
+        private static void Unsubscribe(string topic)
+        {
+            client.Unsubscribe(new string[] { topic });
         }
 
         private static void Client_MqttMsgUnsubscribed(object sender, MqttMsgUnsubscribedEventArgs e)
